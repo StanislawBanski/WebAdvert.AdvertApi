@@ -2,6 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Company>None</Company>
+    <Product>Web Advert Microservices course project</Product>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/StanislawBanski/WebAdvert.AdvertApi</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/StanislawBanski/WebAdvert.AdvertApi</RepositoryUrl>
+    <Authors>Stanislaw Banski</Authors>
   </PropertyGroup>
 
 </Project>

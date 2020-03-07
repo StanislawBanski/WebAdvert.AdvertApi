@@ -26,7 +26,7 @@ namespace AdvertApi.Services
             dbModel.CreationDateTime = DateTime.UtcNow;
             dbModel.Status = AdvertStatus.Pending;
 
-            using (var client = new AmazonDynamoDBClient())
+            using (var client = new AmazonDynamoDBClient(region: Amazon.RegionEndpoint.EUWest2))
             {
                 using (var context = new DynamoDBContext(client))
                 {
@@ -39,7 +39,7 @@ namespace AdvertApi.Services
 
         public async Task Confirm(ConfirmAdvertModel model)
         {
-            using (var client = new AmazonDynamoDBClient())
+            using (var client = new AmazonDynamoDBClient(region: Amazon.RegionEndpoint.EUWest2))
             {
                 using (var context = new DynamoDBContext(client))
                 {
@@ -58,6 +58,19 @@ namespace AdvertApi.Services
                     {
                         await context.DeleteAsync(record);
                     }
+                }
+            }
+        }
+
+        public async Task<bool> CheckHealthAsync()
+        {
+            using (var client = new AmazonDynamoDBClient(region: Amazon.RegionEndpoint.EUWest2))
+            {
+                using (var context = new DynamoDBContext(client))
+                {
+                    var tableData = await client.DescribeTableAsync("Adverts");
+
+                    return string.Compare(tableData.Table.TableStatus, "active", true) == 0;
                 }
             }
         }

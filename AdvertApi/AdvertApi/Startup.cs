@@ -1,3 +1,4 @@
+using AdvertApi.HealthChecks;
 using AdvertApi.Interfaces;
 using AdvertApi.Services;
 using AutoMapper;
@@ -23,6 +24,9 @@ namespace AdvertApi
             services.AddAutoMapper(typeof(Startup));
             services.AddTransient<IAdvertStorageService, DynamoDBAdvertStorage>();
             services.AddControllers();
+            services.AddHealthChecks();
+            services.AddHealthChecks()
+                .AddCheck<StorageHealthCheck>("Dynamo db storage");
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -32,11 +36,11 @@ namespace AdvertApi
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
-
             app.UseRouting();
 
             app.UseAuthorization();
+
+            app.UseHealthChecks("/health");
 
             app.UseEndpoints(endpoints =>
             {
