@@ -7,6 +7,7 @@ using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace AdvertApi.Services
 {
@@ -19,7 +20,7 @@ namespace AdvertApi.Services
             this.mapper = mapper;
         }
 
-        public async Task<string> Add(AdvertModel model)
+        public async Task<string> AddAsync(AdvertModel model)
         {
             var dbModel = mapper.Map<AdvertDbModel>(model);
             dbModel.Id = new Guid().ToString();
@@ -37,7 +38,7 @@ namespace AdvertApi.Services
             return dbModel.Id;
         }
 
-        public async Task Confirm(ConfirmAdvertModel model)
+        public async Task ConfirmAsync(ConfirmAdvertModel model)
         {
             using (var client = new AmazonDynamoDBClient(region: Amazon.RegionEndpoint.EUWest2))
             {
@@ -73,6 +74,33 @@ namespace AdvertApi.Services
                     return string.Compare(tableData.Table.TableStatus, "active", true) == 0;
                 }
             }
+        }
+
+        public async Task<List<AdvertModel>> GetAllAsync()
+        {
+            using (var client = new AmazonDynamoDBClient())
+            {
+                using (var context = new DynamoDBContext(client))
+                {
+                    var scanResult =
+                        await context.ScanAsync<AdvertDbModel>(new List<ScanCondition>()).GetNextSetAsync();
+                    return scanResult.Select(item => mapper.Map<AdvertModel>(item)).ToList();
+                }
+            }
+        }
+
+        public async Task<AdvertModel> GetByIdAsync(string id)
+        {
+            using (var client = new AmazonDynamoDBClient())
+            {
+                using (var context = new DynamoDBContext(client))
+                {
+                    var dbModel = await context.LoadAsync<AdvertDbModel>(id);
+                    if (dbModel != null) return mapper.Map<AdvertModel>(dbModel);
+                }
+            }
+
+            throw new KeyNotFoundException();
         }
     }
 }

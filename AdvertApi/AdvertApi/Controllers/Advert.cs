@@ -1,6 +1,10 @@
 ﻿using AdvertApi.Interfaces;
 using AdvertApiModels;
+using AdvertApiModels.Messages;
+using Amazon.SimpleNotificationService;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,10 +16,12 @@ namespace AdvertApi.Controllers
     public class Advert : ControllerBase
     {
         private readonly IAdvertStorageService advertStorageService;
+        private readonly IConfiguration configuration;
 
-        public Advert(IAdvertStorageService advertStorageService)
+        public Advert(IAdvertStorageService advertStorageService, IConfiguration configuration)
         {
             this.advertStorageService = advertStorageService;
+            this.configuration = configuration;
         }
 
         [HttpPost]
@@ -27,7 +33,7 @@ namespace AdvertApi.Controllers
             string recordId;
             try
             {
-                recordId = await advertStorageService.Add(model);
+                recordId = await advertStorageService.AddAsync(model);
             }
             catch(KeyNotFoundException)
             {
@@ -49,7 +55,8 @@ namespace AdvertApi.Controllers
         {
             try
             {
-                await advertStorageService.Confirm(model);
+                await advertStorageService.ConfirmAsync(model);
+                await RaiseAdvertConfirmedMessage(model);
             }
             catch (KeyNotFoundException)
             {
@@ -61,6 +68,23 @@ namespace AdvertApi.Controllers
             }
 
             return new OkResult();
+        }
+
+        private async Task RaiseAdvertConfirmedMessage(ConfirmAdvertModel model)
+        {
+            var topicArn = configuration.GetValue<string>("TopicArn");
+            var dbModel = await advertStorageService.GetByIdAsync(model.Id);
+            using (var client = new AmazonSimpleNotificationServiceClient(region: Amazon.RegionEndpoint.EUWest2))
+            {
+                var message = new AdvertConfirmedMessage {
+                    Id = model.Id,
+                    Title = dbModel.Title
+                };
+
+                var messageJson = JsonConvert.SerializeObject(message);
+
+                await client.PublishAsync(topicArn, messageJson);
+            }
         }
     }
 }
