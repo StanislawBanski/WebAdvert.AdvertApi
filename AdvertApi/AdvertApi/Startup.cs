@@ -26,6 +26,19 @@ namespace AdvertApi
             services.AddControllers();
             services.AddHealthChecks()
                 .AddCheck<StorageHealthCheck>("Dynamo db storage");
+            services.AddSwaggerGen(options =>
+            {
+                options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = "Web Advert api",
+                    Version = "Version 1",
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                    {
+                        Name = "Name",
+                        Email = "test@mail.com"
+                    }
+                });
+            });
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -40,6 +53,11 @@ namespace AdvertApi
             app.UseAuthorization();
 
             app.UseHealthChecks("/health");
+
+            app.UseSwagger();
+            app.UseSwaggerUI(action => {
+                action.SwaggerEndpoint("/swagger/v1/swagger.json", "Web Advert Api");
+            });
 
             app.UseEndpoints(endpoints =>
             {
